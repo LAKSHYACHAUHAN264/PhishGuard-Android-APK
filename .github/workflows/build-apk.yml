@@ -1,0 +1,70 @@
+name: Build PhishGuard APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Release Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Debug APK
+        run: gradle assembleDebug --stacktrace
+
+      - name: Rename APK
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk PhishGuard-v1.0.0.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PhishGuard-v1.0.0-APK
+          path: PhishGuard-v1.0.0.apk
+          if-no-files-found: error
+
+      - name: Create GitHub Release with APK
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.0
+          name: "PhishGuard Mobile v1.0.0"
+          body: |
+            ### 🛡️ PhishGuard Android Mobile App v1.0.0
+            
+            Welcome to the official Android mobile app release of **PhishGuard**!
+            
+            #### 📱 Download & Install:
+            - Download **`PhishGuard-v1.0.0.apk`** below.
+            - Open the APK file on your Android device and tap **Install**.
+            
+            #### ✨ Highlights:
+            - 🛡️ Full AI Email Phishing Engine powered by PhishGuard Backend
+            - ⚡ Live heuristic threat evaluation & brand spoofing detection
+            - 🌐 Seamless connectivity to `https://scammer-project.onrender.com`
+            - 🎨 Dark cyber aesthetic tailored for mobile screens
+          files: PhishGuard-v1.0.0.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
